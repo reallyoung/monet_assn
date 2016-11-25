@@ -98,6 +98,7 @@ int main (int argc, char *argv[])
 
 	//Install On Off application with UDP protocol on AP
 	uint16_t port = 6000;
+
 	OnOffHelper onOff("ns3::UdpSocketFactory", 
 			Address(InetSocketAddress(i.GetAddress(0),port)));
 	onOff.SetAttribute("PacketSize", UintegerValue(1024));
@@ -106,15 +107,34 @@ int main (int argc, char *argv[])
 
 	onOff.SetAttribute("DataRate", StringValue("5000000bps"));  //5Mbps
 	apps.Add(onOff.Install(staNode.Get(1)));
+
+	OnOffHelper onOff2("ns3::TcpSocketFactory", 
+			Address(InetSocketAddress(i.GetAddress(0),port)));
+	onOff2.SetAttribute("PacketSize", UintegerValue(1024));
+	onOff2.SetAttribute("DataRate", StringValue("10000000bps")); //10Mbps
+	ApplicationContainer apps2 = onOff2.Install(staNode.Get(0)); //random walk node
+
+	onOff2.SetAttribute("DataRate", StringValue("5000000bps"));  //5Mbps
+	apps2.Add(onOff.Install(staNode.Get(1)));
+
+
 	//Install PacketSink app on the mobile staion
 	PacketSinkHelper sink("ns3::UdpSocketFactory",
 			InetSocketAddress(Ipv4Address::GetAny(), port));
-	
+	PacketSinkHelper sink2("ns3::TcpSocketFactory",
+			InetSocketAddress(Ipv4Address::GetAny(), port));
+
 	apps.Add(sink.Install(apNode.Get(0)));
+	apps2.Add(sink2.Install(apNode.Get(0)));
 
-	apps.Start(Seconds(1.0)); // onoff and packetsink start at 1.0
-	apps.Stop(Seconds(100.0)); 
-
+	if(isTCP){
+		apps2.Start(Seconds(1.0)); // onoff and packetsink start at 1.0
+		apps2.Stop(Seconds(100.0)); 
+	}
+	else{//UDP
+		apps.Start(Seconds(1.0)); // onoff and packetsink start at 1.0
+		apps.Stop(Seconds(100.0)); 
+	}
 	Simulator::Schedule(Seconds(1.0), &ChangePosition, staNode.Get(1));	
 	//for netanim
 	AnimationInterface anim("test.xml");
