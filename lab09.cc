@@ -16,12 +16,12 @@ int direction;
 void ChangePosition(Ptr<Node> node) {
 	Ptr<MobilityModel> mobility = node->GetObject<MobilityModel> (); 
 	Vector pos = mobility->GetPosition();
-	if(pos.x <=198.0&& direction)
-		pos.x += 2.0;
+	if(pos.x <=195.0&& direction)
+		pos.x += 5.0;
 	else
 	{
 		direction = 0;
-		pos.x -= 2.0;
+		pos.x -= 5.0;
 	}
 	mobility->SetPosition(pos);
 	Simulator::Schedule(Seconds(1.0),&ChangePosition, node);
@@ -29,12 +29,17 @@ void ChangePosition(Ptr<Node> node) {
 
 int main (int argc, char *argv[])
 {
-//	LogComponentEnableAll(LOG_ALL);
-	int isTCP = 0;
+	//	LogComponentEnableAll(LOG_ALL);
+	bool isTCP = 0;
+	CommandLine cmd;
+	cmd.AddValue ("TCP", "0 = UDP, 1 = TCP", isTCP);
+
+	cmd.Parse (argc,argv);
+
 	Config::SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
 	Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",StringValue ("2200"));
 	direction =1;
-	NodeContainer nodes, apNode, staNode;
+	NodeContainer nodes, apNode, staNode, staNode2;
 	apNode.Create(1);
 	staNode.Create(2);
 	nodes.Add(apNode);//nodes0 = apNode0
@@ -58,7 +63,9 @@ int main (int argc, char *argv[])
 	//MAC layer for mobile station
 	wifiMac.SetType("ns3::StaWifiMac", "Ssid", SsidValue(ssid), "ActiveProbing", BooleanValue(true));
 	NetDeviceContainer staDevice = wifi.Install(wifiPhy, wifiMac, staNode.Get(0));
+	NetDeviceContainer staDevice2 = wifi.Install(wifiPhy,wifiMac, staNode.Get(1));
 	devices.Add(staDevice);
+	devices.Add(staDevice2);
 
 	//set initial position of nodes
 	MobilityHelper mobility;
@@ -97,18 +104,25 @@ int main (int argc, char *argv[])
 	onOff.SetAttribute("DataRate", StringValue("3000000bps")); //3Mbps
 	ApplicationContainer apps = onOff.Install(staNode.Get(0));
 
+	apps.Add(onOff.Install(staNode.Get(1)));
+	//ApplicationContainer apps2 = onOff.Install(staNode.Get(1));
 	//Install PacketSink app on the mobile staion
 	PacketSinkHelper sink("ns3::UdpSocketFactory",
 			InetSocketAddress(Ipv4Address::GetAny(), port));
+	
 	apps.Add(sink.Install(apNode.Get(0)));
+//	apps2.Add(sink.Install(apNode.Get(0)));
 
 	apps.Start(Seconds(1.0)); // onoff and packetsink start at 1.0
-	apps.Stop(Seconds(100.0)); 
+	apps.Stop(Seconds(41.0)); 
+//	apps2.Start(Seconds(1.0));
+//	apps2.Stop(Seconds(100.0));
+
 	Simulator::Schedule(Seconds(1.0), &ChangePosition, staNode.Get(1));	
 	//for netanim
 	AnimationInterface anim("test.xml");
 
-	Simulator::Stop(Seconds(100.0));
+	Simulator::Stop(Seconds(41.0));
 	Simulator::Run();
 	Simulator::Destroy();
 			
