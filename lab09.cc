@@ -16,12 +16,12 @@ int direction;
 void ChangePosition(Ptr<Node> node) {
 	Ptr<MobilityModel> mobility = node->GetObject<MobilityModel> (); 
 	Vector pos = mobility->GetPosition();
-	if(pos.x <=195.0&& direction)
-		pos.x += 5.0;
+	if(pos.x <=198.0&& direction)
+		pos.x += 2.0;
 	else
 	{
 		direction = 0;
-		pos.x -= 5.0;
+		pos.x -= 2.0;
 	}
 	mobility->SetPosition(pos);
 	Simulator::Schedule(Seconds(1.0),&ChangePosition, node);
@@ -101,28 +101,25 @@ int main (int argc, char *argv[])
 	OnOffHelper onOff("ns3::UdpSocketFactory", 
 			Address(InetSocketAddress(i.GetAddress(0),port)));
 	onOff.SetAttribute("PacketSize", UintegerValue(1024));
-	onOff.SetAttribute("DataRate", StringValue("3000000bps")); //3Mbps
-	ApplicationContainer apps = onOff.Install(staNode.Get(0));
+	onOff.SetAttribute("DataRate", StringValue("10000000bps")); //10Mbps
+	ApplicationContainer apps = onOff.Install(staNode.Get(0)); //random walk node
 
+	onOff.SetAttribute("DataRate", StringValue("5000000bps"));  //5Mbps
 	apps.Add(onOff.Install(staNode.Get(1)));
-	//ApplicationContainer apps2 = onOff.Install(staNode.Get(1));
 	//Install PacketSink app on the mobile staion
 	PacketSinkHelper sink("ns3::UdpSocketFactory",
 			InetSocketAddress(Ipv4Address::GetAny(), port));
 	
 	apps.Add(sink.Install(apNode.Get(0)));
-//	apps2.Add(sink.Install(apNode.Get(0)));
 
 	apps.Start(Seconds(1.0)); // onoff and packetsink start at 1.0
-	apps.Stop(Seconds(41.0)); 
-//	apps2.Start(Seconds(1.0));
-//	apps2.Stop(Seconds(100.0));
+	apps.Stop(Seconds(100.0)); 
 
 	Simulator::Schedule(Seconds(1.0), &ChangePosition, staNode.Get(1));	
 	//for netanim
 	AnimationInterface anim("test.xml");
-
-	Simulator::Stop(Seconds(41.0));
+	anim.SetMaxPktsPerTraceFile(999999999999999);
+	Simulator::Stop(Seconds(100.0));
 	Simulator::Run();
 	Simulator::Destroy();
 			
