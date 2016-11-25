@@ -27,11 +27,10 @@ void ChangePosition(Ptr<Node> node) {
 	Simulator::Schedule(Seconds(1.0),&ChangePosition, node);
 }
 
-
 int main (int argc, char *argv[])
 {
 //	LogComponentEnableAll(LOG_ALL);
-
+	int isTCP = 0;
 	Config::SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
 	Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",StringValue ("2200"));
 	direction =1;
